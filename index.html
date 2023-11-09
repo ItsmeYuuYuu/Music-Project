@@ -1,0 +1,209 @@
+<html>
+<head>
+    <title>ItsmeYuuYuu - Web nghe nhạc</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 36px;
+            margin-top: 20px;
+        }
+
+        #container {
+            width: 800px;
+            margin: 0 auto;
+        }
+
+        #playlist {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        #playlist li {
+            display: inline-block;
+            width: 180px;
+            height: 180px;
+            margin: 10px;
+            position: relative;
+        }
+
+        #playlist li img {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+        }
+
+        #playlist li span {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        #playlist li.active {
+            border: 5px solid yellow;
+        }
+
+        #audio-player {
+            width: 800px;
+            height: 300px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        #audio-player canvas {
+            width: 800px;
+            height: 200px;
+            background-color: black;
+        }
+
+        #audio-player audio {
+            width: 800px;
+            height: 50px;
+        }
+
+        #audio-player button {
+            width: 50px;
+            height: 50px;
+            position: absolute;
+            top: 250px;
+            left: 375px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ItsmeYuuYuu - Web nghe nhạc</h1>
+    <div id="container">
+        <ul id="playlist">
+            <li class="active"><img src="https://i.imgur.com/2VZLwZx.jpg" alt="EDM"><span>EDM</span></li>
+            <li><img src="https://i.imgur.com/4fQY9Yg.jpg" alt="Dubstep"><span>Dubstep</span></li>
+        </ul>
+        <div id="audio-player">
+            <canvas id="canvas"></canvas>
+            <audio id="audio" controls>
+                <source src="https://www.bensound.com/bensound-music/bensound-energy.mp3" type="audio/mpeg">
+            </audio>
+            <button id="shuffle" onclick="shuffle()">Shuffle</button>
+        </div>
+    </div>
+    <script>
+        // Get the elements
+        var playlist = document.getElementById("playlist");
+        var audio = document.getElementById("audio");
+        var canvas = document.getElementById("canvas");
+        var shuffle = document.getElementById("shuffle");
+
+        // Create an audio context
+        var audioContext = new AudioContext();
+        var source = audioContext.createMediaElementSource(audio);
+        var analyser = audioContext.createAnalyser();
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+
+        // Create a canvas context
+        var canvasContext = canvas.getContext("2d");
+
+        // Define the audio sources
+        var sources = {
+            "EDM": "https://www.bensound.com/bensound-music/bensound-energy.mp3",
+            "Dubstep": "https://www.bensound.com/bensound-music/bensound-dubstep.mp3"
+        };
+
+        // Define the colors for the audio waves
+        var colors = {
+            "EDM": "lime",
+            "Dubstep": "cyan"
+        };
+
+        // Define a function to draw the audio waves
+        function draw() {
+            // Get the frequency data
+            var bufferLength = analyser.frequencyBinCount;
+            var dataArray = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(dataArray);
+
+            // Clear the canvas
+            canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw the bars
+            var barWidth = (canvas.width / bufferLength) * 2.5;
+            var barHeight;
+            var x = 0;
+            for (var i = 0; i < bufferLength; i++) {
+                barHeight = dataArray[i];
+                canvasContext.fillStyle = colors[audio.getAttribute("data-genre")];
+                canvasContext.fillRect(x, canvas.height - barHeight / 2, barWidth, barHeight / 2);
+                x += barWidth + 1;
+            }
+
+            // Request the next animation frame
+            requestAnimationFrame(draw);
+        }
+
+        // Define a function to play a song
+        function playSong(element) {
+            // Get the genre of the song
+            var genre = element.children[0].getAttribute("alt");
+
+            // Set the audio source and data-genre
+            audio.src = sources[genre];
+            audio.setAttribute("data-genre", genre);
+
+            // Play the audio
+            audio.play();
+
+            // Draw the audio waves
+            draw();
+
+            // Remove the active class from the previous song
+            var current = playlist.querySelector("li.active");
+            if (current) {
+                current.classList.remove("active");
+            }
+
+            // Add the active class to the current song
+            element.classList.add("active");
+        }
+
+        // Define a function to shuffle the songs
+        function shuffle() {
+            // Get the songs
+            var songs = playlist.children;
+
+            // Get a random index
+            var index = Math.floor(Math.random() * songs.length);
+
+            // Play the song at that index
+            playSong(songs[index]);
+        }
+
+        // Add a click event listener to the playlist
+        playlist.addEventListener("click", function(e) {
+            // Get the clicked element
+            var element = e.target;
+
+            // If the element is an image or a span, get its parent
+            if (element.tagName == "IMG" || element.tagName == "SPAN") {
+                element = element.parentElement;
+            }
+
+            // If the element is a list item, play the song
+            if (element.tagName == "LI") {
+                playSong(element);
+            }
+        });
+
+        // Play the first song by default
+        playSong(playlist.children[0]);
+    </script>
+</body>
+</html>
